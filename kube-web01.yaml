@@ -3,6 +3,7 @@ kind: Service
 metadata:
   name: web01-svc
 spec:
+  type: LoadBalance
   selector:
     app: web01
   ports:
