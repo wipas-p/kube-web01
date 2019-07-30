@@ -5,7 +5,7 @@ metadata:
   labels:
     run: web-service
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   ports:
   - port: 80
     protocol: TCP
