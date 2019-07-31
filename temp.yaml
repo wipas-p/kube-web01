@@ -1,0 +1,138 @@
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ada-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /testpath
+        backend:
+          serviceName: test
+          servicePort: 80
+
+##############
+
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: test-ingress
+spec:
+  rules:
+  - host: kong1.ada.gabledemo.com
+    http:
+      paths: /*
+      - backend:
+          serviceName: web-service
+          servicePort: 80
+        path: /
+  - host: kong2.ada.gabledemo.com
+    http:
+      paths: /v2/*
+      - backend:
+          serviceName: web-service
+          servicePort: 80
+        path: /
+
+#####
+
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    kubernetes.io/ingress.class: nginx
+  name: test-ingress
+  namespace: default
+spec:
+  rules:
+    - host: kong1.ada.gabledemo.com
+      http:
+        paths:
+          - backend:
+              serviceName: web-service
+              servicePort: 80
+            path: /
+
+## Create Ingress Rules for Applications ##
+cat > nginx-ingress.yaml <<EOF
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: nginx-ingress
+spec:
+  rules:
+  - host: kong1.ada.gabledemo.com
+    http:
+      paths:
+      - backend:
+          serviceName: nginx-ingress
+          servicePort: 18080
+        path: /nginx_status
+EOF
+
+cat > web-ingress.yaml <<EOF
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  name: web-ingress
+spec:
+  rules:
+  - host: kong1.ada.gabledemo.com
+    http:
+      paths:
+      - backend:
+          serviceName: web-service
+          servicePort: 80
+        path: /
+      # - backend:
+      #     serviceName: appsvc2
+      #     servicePort: 80
+      #   path: /app2
+EOF
+
+kubectl create -f nginx-ingress.yaml -n=ingress
+kubectl create -f web-ingress.yaml
+
+## Expose Nginx Ingress Controller
+cat > nginx-ingress-controller-service.yaml <<EOF
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-ingress
+spec:
+  type: NodePort
+  ports:
+    - port: 80
+      nodePort: 30000
+      name: http
+    - port: 18080
+      nodePort: 32000
+      name: http-mgmt
+  selector:
+    app: nginx-ingress-lb
+EOF
+
+kubectl create -f nginx-ingress-controller-service.yaml -n=ingress
+
+####
+
+cat > web-fanout-ingress.yaml << EOF
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: web-fanout-ingress
+  annotations:
+spec:
+  rules:
+  - host: kong1.ada.gabledemo.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: web-service
+          servicePort: 80
+EOF

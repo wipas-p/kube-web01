@@ -1,0 +1,24 @@
+pipeline {
+    agent any
+
+    environment {
+        dockerImage = ''
+    }
+
+    stages {
+
+        stage('Clone SCM') {
+            steps {
+              git branch: 'master', url: 'https://github.com/wipas-p/kube-web01.git'
+            }
+        }
+
+        stage('Deployment') {
+            steps {
+                sh 'kubectl apply -f apache-deployment.yaml';
+                sh 'kubectl apply -f apache-svc.yaml';
+            }
+        }
+
+    }
+}
