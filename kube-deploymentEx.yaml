@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mynamespace
+  labels:
+    name: mynamespace
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: mynamespace
+  labels:
+    app:  myapp
+  name: myapp-data
+spec:
+  storageClassName: gp2
+  accessModes:
+  - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  namespace: mynamespace
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: mynginx
+    spec:
+      containers:
+      - name: mynginx
+        image: myuser/my_private_nginx_image
+        ports:
+          - containerPort: 80
+      restartPolicy: Always
+
+
+    imagePullSecrets:
+      - name: dockerhubpull
